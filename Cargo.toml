@@ -4,6 +4,8 @@ version = "0.1.0"
 authors = ["Justin Barclay <justincbarclay@gmail.com>"]
 
 [dependencies]
-futures = "0.1"
-hyper = "0.11"
-tokio-core = "0.1"
+futures = "0.1.14"
+hyper = "0.11.2"
+tokio-core =  "0.1.11"
+pretty_env_logger = "0.2.2"
+hyper-tls = "0.1.3"
