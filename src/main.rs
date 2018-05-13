@@ -3,9 +3,12 @@ extern crate hyper;
 extern crate pretty_env_logger;
 extern crate tokio_core;
 extern crate hyper_tls;
+extern crate serde_json;
 
 use futures::Stream;
 use futures::Future;
+
+use serde_json::Value;
 
 use hyper::{Body, Chunk, Client, Get, Post, StatusCode};
 use hyper_tls::HttpsConnector;
@@ -15,44 +18,44 @@ use hyper::server::{Http, Service, Request, Response};
 
 static NOTFOUND: &[u8] = b"Not Found";
 
-pub type ResponseStream = Box<Stream<Item = Chunk, Error = Error>>;
+//pub type ResponseStream = Bkox<Stream<Item = Chunk, Error = Error>>;
 
 struct ResponseExample(tokio_core::reactor::Handle);
 
 impl Service for ResponseExample {
   type Request = Request;
-  type Response = Response<ResponseStream>;
+  type Response = Response;
   type Error = hyper::Error;
   type Future = Box<Future<Item = Self::Response, Error = Self::Error>>;
 
   fn call(&self, req: Request) -> Self::Future {
-    println!("made it into call");
+    let client = Client::configure()
+      .connector(HttpsConnector::new(4, &self.0).unwrap())
+      .build(&self.0);
+
     match (req.method(), req.path()) {
       (&Get, "/panic") => {
-        let client = Client::configure()
-          .connector(HttpsConnector::new(4, &self.0).unwrap())
-          .build(&self.0);
+
         let mut req = Request::new(Get, "https://www.reddit.com/r/aww/top/.json?limit=1".parse().unwrap());
         let web_res_future = client.request(req);
-        let mut length = 0;
-        Box::new(web_res_future.map(move |web_res| {
-          let body: ResponseStream = Box::new(web_res.body().map(move |b| {
-            // let v = b.to_vec();
-            // length = v.len();
-            // String::from_utf8_lossy(&v).to_string()
-            b
-          }));
-          Response::new()
-            .with_status(StatusCode::Ok)
-            .with_body(body)
-        }))
+
+        Box::new(web_res_future.then(|web_res| match web_res {
+          Ok(res) => {
+            let json =
+            futures::future::ok(
+              Response::new()
+              .with_status(StatusCode::Ok)
+              .with_body(res.body()))
+          }
+          Err(e) => futures::future::err(e)
+          }))
       },
       _ => {
-        let body: ResponseStream = Box::new(Body::from("Not found"));
+        let body = Body::from("Not found");
         Box::new(futures::future::ok(Response::new()
                                      .with_status(StatusCode::NotFound)
                                      .with_header(ContentLength(NOTFOUND.len() as u64))
-                                     .with_body(body)))
+                                     .with_body("Not found")))
       }
     }
   }
