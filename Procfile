@@ -1,1 +1,1 @@
-web: ROCKET_PORT=$PORT target/release/rocket-static-server
+web: RUST_PORT=$PORT target/release/rust-slack-bot
