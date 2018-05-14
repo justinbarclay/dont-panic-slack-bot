@@ -39,17 +39,24 @@ impl Service for ResponseExample {
         let mut req = Request::new(Get, "https://www.reddit.com/r/aww/top/.json?limit=1".parse().unwrap());
         let web_res_future = client.request(req);
 
-        Box::new(web_res_future.then(|web_res| match web_res {
-          Ok(res) => {
-            let json =
-            futures::future::ok(
-              Response::new()
-              .with_status(StatusCode::Ok)
-              .with_body(res.body()))
-          }
-          Err(e) => futures::future::err(e)
-          }))
-      },
+        Box::new(web_res_future.and_then(|web_res| {
+
+          web_res.body().concat2().and_then( move |body| {
+            let v: Value = serde_json::from_slice(&body).unwrap();
+            Box::new(
+              futures::future::ok(
+                Response::new()
+                  .with_status(StatusCode::Ok)
+                  .with_body(serde_json::to_string(&v["data"]["children"][0]["data"]["url"]).unwrap()))
+            )
+          })
+            .map(|x| {
+              x
+            })
+        }).map(|x| {
+          x
+        }))
+      }
       _ => {
         let body = Body::from("Not found");
         Box::new(futures::future::ok(Response::new()
@@ -60,6 +67,7 @@ impl Service for ResponseExample {
     }
   }
 }
+
 fn main() {
   pretty_env_logger::init();
 
