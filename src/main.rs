@@ -43,11 +43,12 @@ impl Service for ResponseExample {
 
           web_res.body().concat2().and_then( move |body| {
             let v: Value = serde_json::from_slice(&body).unwrap();
+            let url = v["data"]["children"][0]["data"]["url"].to_string();
             Box::new(
               futures::future::ok(
                 Response::new()
                   .with_status(StatusCode::Ok)
-                  .with_body(serde_json::to_string(&v["data"]["children"][0]["data"]["url"]).unwrap()))
+                  .with_body(url))
             )
           })
             .map(|x| {
@@ -71,8 +72,15 @@ impl Service for ResponseExample {
 fn main() {
   pretty_env_logger::init();
 
-  let addr = "127.0.0.1:3000".parse().unwrap();
+  let mut addr: std::net::SocketAddr = "127.0.0.1:3000".parse().unwrap();
+  //  let port: i32 = std::env::args("RUST_PORT").parse().unwrap();
 
+  let port = match std::env::var("RUST_PORT") {
+    Ok(val) => val.parse::<u16>().unwrap(),
+    Err(_) => "3000".parse::<u16>().unwrap()
+  };
+
+  addr.set_port(port);
   let mut core = tokio_core::reactor::Core::new().unwrap();
   let server_handle = core.handle();
   let client_handle = core.handle();
