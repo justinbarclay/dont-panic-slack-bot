@@ -57,6 +57,28 @@ fn make_slack_response(url: String) -> String {
   serde_json::to_string(&message).unwrap()
 }
 
+fn get_top_aww_post(handler: &tokio_core::reactor::Handle) -> Box<Future<Item=hyper::Response, Error=hyper::Error>>{
+  let client = Client::configure()
+    .connector(HttpsConnector::new(4, handler).unwrap())
+    .build(handler);
+  let mut req = Request::new(Get, "https://www.reddit.com/r/aww/top/.json?limit=1".parse().unwrap());
+  let web_res_future = client.request(req);
+
+  Box::new(web_res_future.and_then(|web_res| {
+    web_res.body().concat2().and_then( move |body| {
+      let slack_message = match parse_response(&body){
+        Ok(response) => make_slack_response(response),
+        Err(_e) => "Error".to_string()
+      };
+      println!("{:?}", slack_message);
+      Ok(
+        Response::new()
+          .with_status(StatusCode::Ok)
+          .with_body(slack_message))
+    })
+  }))
+}
+
 impl Service for ResponseExample {
   type Request = Request;
   type Response = Response;
@@ -64,30 +86,9 @@ impl Service for ResponseExample {
   type Future = Box<Future<Item = Self::Response, Error = Self::Error>>;
 
   fn call(&self, req: Request) -> Self::Future {
-    let client = Client::configure()
-      .connector(HttpsConnector::new(4, &self.0).unwrap())
-      .build(&self.0);
-
     match (req.method(), req.path()) {
       (&Get, "/panic") => {
-
-        let mut req = Request::new(Get, "https://www.reddit.com/r/aww/top/.json?limit=1".parse().unwrap());
-        let web_res_future = client.request(req);
-
-        Box::new(web_res_future.and_then(|web_res| {
-
-          web_res.body().concat2().and_then( move |body| {
-            let slack_message = match parse_response(&body){
-              Ok(response) => make_slack_response(response),
-              Err(_e) => "Error".to_string()
-            };
-            println!("{:?}", slack_message);
-            Ok(
-              Response::new()
-                .with_status(StatusCode::Ok)
-                .with_body(slack_message))
-          })
-        }))
+        get_top_aww_post(&self.0)
       }
       _ => {
         let body = Body::from("Not found");
