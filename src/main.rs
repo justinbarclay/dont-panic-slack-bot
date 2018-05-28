@@ -49,7 +49,7 @@ fn parse_response(body: &Chunk) -> Result<String, Error> {
 fn make_slack_response(url: String) -> String {
   let attachment = Attachment {
     title: "Someone is panicing".to_string(),
-    image_url: "url".to_string()
+    image_url: url.to_string()
   };
 
   let message = SlackMessage {channel:"#general".to_string(),
