@@ -12,72 +12,15 @@ extern crate serde_derive;
 use futures::Stream;
 use futures::Future;
 
-use serde_json::Value;
+use self::hyper::{Body, Get, StatusCode};
+use self::hyper::header::ContentLength;
+use self::hyper::server::{Http, Service, Request, Response};
 
-use hyper::{Body, Chunk, Client, Get, Post, StatusCode};
-use hyper_tls::HttpsConnector;
-use hyper::error::Error;
-use hyper::header::ContentLength;
-use hyper::server::{Http, Service, Request, Response};
+pub mod reddit;
 
 static NOTFOUND: &[u8] = b"Not Found";
 
 struct ResponseExample(tokio_core::reactor::Handle);
-
-#[derive(Serialize, Deserialize)]
-struct Attachment{
-  title: String,
-  image_url: String
-}
-
-#[derive(Serialize, Deserialize)]
-struct SlackMessage{
-  channel: String,
-  attachments: [Attachment; 1],
-}
-
-fn parse_response(body: &Chunk) -> Result<String, Error> {
-  let v: Value = serde_json::from_slice(&body).unwrap();
-  let parsed_result = v["data"]["children"][0]["data"]["url"].to_string();
-  if parsed_result.is_empty() || parsed_result == "null"  {
-    Err(Error::Status)
-  } else {
-    Ok(parsed_result)
-  }
-}
-
-fn make_slack_response(url: String) -> String {
-  let attachment = Attachment {
-    title: "Someone is panicing".to_string(),
-    image_url: url.to_string()
-  };
-
-  let message = SlackMessage {channel:"#general".to_string(),
-                              attachments: [attachment]};
-  serde_json::to_string(&message).unwrap()
-}
-
-fn get_top_aww_post(handler: &tokio_core::reactor::Handle) -> Box<Future<Item=hyper::Response, Error=hyper::Error>>{
-  let client = Client::configure()
-    .connector(HttpsConnector::new(4, handler).unwrap())
-    .build(handler);
-  let mut req = Request::new(Get, "https://www.reddit.com/r/aww/top/.json?limit=1".parse().unwrap());
-  let web_res_future = client.request(req);
-
-  Box::new(web_res_future.and_then(|web_res| {
-    web_res.body().concat2().and_then( move |body| {
-      let slack_message = match parse_response(&body){
-        Ok(response) => make_slack_response(response),
-        Err(_e) => "Error".to_string()
-      };
-      println!("{:?}", slack_message);
-      Ok(
-        Response::new()
-          .with_status(StatusCode::Ok)
-          .with_body(slack_message))
-    })
-  }))
-}
 
 impl Service for ResponseExample {
   type Request = Request;
@@ -88,14 +31,14 @@ impl Service for ResponseExample {
   fn call(&self, req: Request) -> Self::Future {
     match (req.method(), req.path()) {
       (&Get, "/panic") => {
-        get_top_aww_post(&self.0)
+        reddit::get_top_aww_post(&self.0)
       }
       _ => {
         let body = Body::from("Not found");
         Box::new(futures::future::ok(Response::new()
                                      .with_status(StatusCode::NotFound)
                                      .with_header(ContentLength(NOTFOUND.len() as u64))
-                                     .with_body("Not found")))
+                                     .with_body(body)))
       }
     }
   }
