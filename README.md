@@ -1,1 +1,5 @@
-A simple bot to help remind you that not everything is worth panicking about.
+# Don't Panic Bot
+
+A simple Slack bot to help remind you that you don't always need to panic
+
+![Don't Panic!](img/panic.gif)
