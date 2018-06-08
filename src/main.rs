@@ -12,7 +12,7 @@ extern crate serde_derive;
 use futures::Stream;
 use futures::Future;
 
-use self::hyper::{Body, Get, StatusCode};
+use self::hyper::{Body, Get, Post, StatusCode};
 use self::hyper::header::ContentLength;
 use self::hyper::server::{Http, Service, Request, Response};
 
