@@ -30,7 +30,7 @@ impl Service for ResponseExample {
 
   fn call(&self, req: Request) -> Self::Future {
     match (req.method(), req.path()) {
-      (&Get, "/panic") => {
+      (&Post, "/panic") => {
         reddit::get_top_aww_post(&self.0)
       }
       _ => {
@@ -63,10 +63,10 @@ fn main() {
   println!("Listening on http://{} with 1 thread.", serve.incoming_ref().local_addr());
 
 
-   let h2 = server_handle.clone();
-    server_handle.spawn(serve.for_each(move |conn| {
-        h2.spawn(conn.map(|_| ()).map_err(|err| println!("serve error: {:?}", err)));
-        Ok(())
-    }).map_err(|_| ()));
+  let h2 = server_handle.clone();
+  server_handle.spawn(serve.for_each(move |conn| {
+    h2.spawn(conn.map(|_| ()).map_err(|err| println!("serve error: {:?}", err)));
+    Ok(())
+  }).map_err(|_| ()));
   core.run(futures::future::empty::<(), ()>()).unwrap();
 }
