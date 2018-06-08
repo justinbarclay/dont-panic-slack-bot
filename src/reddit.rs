@@ -41,7 +41,7 @@ fn parse_response(body: &Chunk) -> ::std::result::Result<String, Error> {
 
 fn make_slack_response(url: String) -> String {
   let attachment = Attachment {
-    title: "Someone is panicing".to_string(),
+    title: "Don't panic! Here is something cute...".to_string(),
     image_url: url.to_string(),
   };
 
