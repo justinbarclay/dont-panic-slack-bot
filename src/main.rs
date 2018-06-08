@@ -5,6 +5,7 @@ extern crate tokio_core;
 extern crate hyper_tls;
 extern crate serde_json;
 extern crate serde;
+extern crate rand;
 
 #[macro_use]
 extern crate serde_derive;

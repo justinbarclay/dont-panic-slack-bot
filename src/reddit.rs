@@ -5,12 +5,13 @@ extern crate tokio_core;
 extern crate hyper_tls;
 extern crate serde_json;
 extern crate serde;
+extern crate rand;
 
 use futures::Stream;
 use futures::Future;
 
 use serde_json::Value;
-
+use rand::prelude::*;
 use self::hyper::{Chunk, Client, Get, StatusCode};
 use hyper_tls::HttpsConnector;
 use self::hyper::error::Error as Error;
@@ -30,8 +31,10 @@ struct SlackMessage {
 }
 
 fn parse_response(body: &Chunk) -> ::std::result::Result<String, Error> {
+  let mut rng = thread_rng();
+  let index = rng.gen_range(0, 10);
   let v: Value = serde_json::from_slice(&body).unwrap();
-  let parsed_result = v["data"]["children"][0]["data"]["url"].to_string();
+  let parsed_result = v["data"]["children"][index]["data"]["url"].to_string();
   if parsed_result.is_empty() || parsed_result == "null" {
     Err(hyper::error::Error::Status)
   } else {
@@ -56,12 +59,13 @@ fn make_slack_response(url: String) -> String {
 pub fn get_top_aww_post(
   handler: &tokio_core::reactor::Handle,
 ) -> Box<Future<Item = hyper::Response, Error = hyper::Error>> {
+
   let client = Client::configure()
     .connector(HttpsConnector::new(4, handler).unwrap())
     .build(handler);
   let req = Request::new(
     Get,
-    "https://www.reddit.com/r/aww/top/.json?limit=1"
+    "https://www.reddit.com/r/aww/top/.json?limit=10"
       .parse()
       .unwrap(),
   );
