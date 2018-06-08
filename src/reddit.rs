@@ -24,6 +24,7 @@ struct Attachment {
 
 #[derive(Serialize, Deserialize)]
 struct SlackMessage {
+  response_type: String,
   channel: String,
   attachments: [Attachment; 1],
 }
@@ -45,6 +46,7 @@ fn make_slack_response(url: String) -> String {
   };
 
   let message = SlackMessage {
+    response_type: "ephemeral".to_string(),
     channel: "#general".to_string(),
     attachments: [attachment],
   };
