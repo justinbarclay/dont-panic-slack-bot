@@ -15,7 +15,7 @@ use self::hyper::{Chunk, Client, Get, StatusCode};
 use hyper_tls::HttpsConnector;
 use self::hyper::error::Error as Error;
 use self::hyper::server::{Request, Response};
-
+use self::hyper::header::{Headers, ContentType};
 #[derive(Serialize, Deserialize)]
 struct Attachment {
   title: String,
@@ -74,8 +74,13 @@ pub fn get_top_aww_post(
         Err(_e) => "Error parsing JSON".to_string(),
       };
       println!("{:?}", slack_message);
+      let mut headers = Headers::new();
+      headers.set(
+        ContentType::json()
+      );
       Ok(
         Response::new()
+          .with_headers(headers)
           .with_status(StatusCode::Ok)
           .with_body(slack_message),
       )
