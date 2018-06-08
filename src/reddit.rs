@@ -34,7 +34,7 @@ fn parse_response(body: &Chunk) -> ::std::result::Result<String, Error> {
   if parsed_result.is_empty() || parsed_result == "null" {
     Err(hyper::error::Error::Status)
   } else {
-    Ok(parsed_result)
+    Ok(parsed_result.replace("\"", ""))
   }
 }
 

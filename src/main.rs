@@ -33,6 +33,9 @@ impl Service for ResponseExample {
       (&Post, "/panic") => {
         reddit::get_top_aww_post(&self.0)
       }
+      (&Get, "/panic") => {
+        reddit::get_top_aww_post(&self.0)
+      }
       _ => {
         let body = Body::from("Not found");
         Box::new(futures::future::ok(Response::new()
