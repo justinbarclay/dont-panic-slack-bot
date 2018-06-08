@@ -47,7 +47,7 @@ impl Service for ResponseExample {
 fn main() {
   pretty_env_logger::init();
 
-  let mut addr: std::net::SocketAddr = "127.0.0.1:3000".parse().unwrap();
+  let mut addr: std::net::SocketAddr = "0.0.0.0:3000".parse().unwrap();
 
   let port = match std::env::var("RUST_PORT") {
     Ok(val) => val.parse::<u16>().unwrap(),
