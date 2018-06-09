@@ -20,7 +20,7 @@ use self::hyper::header::{Headers, ContentType};
 #[derive(Serialize, Deserialize)]
 struct Attachment {
   title: String,
-  image_url: String,
+  title_link: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -45,7 +45,7 @@ fn parse_response(body: &Chunk) -> ::std::result::Result<String, Error> {
 fn make_slack_response(url: String) -> String {
   let attachment = Attachment {
     title: "Don't panic! Here is a cute picture to soothe you.".to_string(),
-    image_url: url
+    title_link: url
   };
 
   let message = SlackMessage {
