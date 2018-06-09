@@ -1,4 +1,4 @@
-
+extern crate regex;
 extern crate futures;
 extern crate hyper;
 extern crate tokio_core;
@@ -17,6 +17,9 @@ use hyper_tls::HttpsConnector;
 use self::hyper::error::Error as Error;
 use self::hyper::server::{Request, Response};
 use self::hyper::header::{Headers, ContentType};
+
+use regex::Regex;
+
 #[derive(Serialize, Deserialize)]
 struct Attachment {
   title: String,
@@ -30,15 +33,33 @@ struct SlackMessage {
   attachments: [Attachment; 1],
 }
 
+fn find_good_url(children: &Value, index: usize, max: i32) -> String {
+  let url = children[index]["data"]["url"].to_string().replace("\"", "");
+  let copied_url = url.clone();
+  let pattern = Regex::new(r"(\.gif|\.jpg|\.png|\.bmp)\b").unwrap();
+  let image = pattern.captures(&copied_url).unwrap();
+
+  // I am way too lazy to exhaustively check all 10
+  if image.len() > 0 || index == 0{
+    url
+  } else {
+    find_good_url(children, index-1, max)
+  }
+}
+
 fn parse_response(body: &Chunk) -> ::std::result::Result<String, Error> {
   let mut rng = thread_rng();
-  let index = rng.gen_range(0, 10);
+  let index = rng.gen_range(0, 9);
+
   let v: Value = serde_json::from_slice(&body).unwrap();
-  let parsed_result = v["data"]["children"][index]["data"]["url"].to_string();
-  if parsed_result.is_empty() || parsed_result == "null" {
+  let children = &v["data"]["children"];
+
+  let url = find_good_url(children, index, 10);
+
+  if url.is_empty() || url == "null" {
     Err(hyper::error::Error::Status)
   } else {
-    Ok(parsed_result.replace("\"", ""))
+    Ok(url)
   }
 }
 

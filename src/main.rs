@@ -6,6 +6,7 @@ extern crate hyper_tls;
 extern crate serde_json;
 extern crate serde;
 extern crate rand;
+extern crate regex;
 
 #[macro_use]
 extern crate serde_derive;
