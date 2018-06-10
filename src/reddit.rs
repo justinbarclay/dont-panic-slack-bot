@@ -37,10 +37,14 @@ fn find_good_url(children: &Value, index: usize, max: i32) -> String {
   let url = children[index]["data"]["url"].to_string().replace("\"", "");
   let copied_url = url.clone();
   let pattern = Regex::new(r"(\.gif|\.jpg|\.png|\.bmp)\b").unwrap();
-  let image = pattern.captures(&copied_url).unwrap();
+
+  let image = match pattern.captures(&copied_url) {
+    Some(_) => true,
+    None => false
+  };
 
   // I am way too lazy to exhaustively check all 10
-  if image.len() > 0 || index == 0{
+  if image || index == 0 {
     url
   } else {
     find_good_url(children, index-1, max)
